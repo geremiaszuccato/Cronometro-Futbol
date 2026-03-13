@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de minutos ⚽</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --bg-tertiary: #eeede8;
+    --text-primary: #1a1a18;
+    --text-secondary: #666660;
+    --border: rgba(0,0,0,0.12);
+    --border-hover: rgba(0,0,0,0.25);
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --green-deeper: #04342C;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --red-mid: #E24B4A;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-tertiary: #242422;
+      --text-primary: #f0efe8;
+      --text-secondary: #a0a098;
+      --border: rgba(255,255,255,0.12);
+      --border-hover: rgba(255,255,255,0.25);
+      --green-light: #04342C;
+      --amber-light: #412402;
+      --red-light: #501313;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 12px;
+  }
+
+  .app {
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--bg-tertiary);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+  }
+
+  .header h1 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-hover);
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-primary);
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--bg-secondary); }
+  .btn-danger { border-color: var(--red-mid); color: var(--red); }
+  .btn-danger:hover { background: var(--red-light); }
+
+  .add-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .add-form input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-hover);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .add-form input:focus { border-color: var(--green); }
+  .add-form input::placeholder { color: var(--text-secondary); }
+
+  .btn-add {
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--green);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-add:hover { background: var(--green-dark); }
+  .btn-add:active { background: var(--green-deeper); }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .stat {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-val { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+  .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .global-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .global-controls .btn { flex: 1; padding: 10px; font-size: 14px; }
+  .btn-stop-all { border-color: var(--red-mid); color: var(--red); }
+  .btn-stop-all:hover { background: var(--red-light); }
+  .btn-start-all { border-color: var(--green); color: var(--green-dark); }
+  .btn-start-all:hover { background: var(--green-light); }
+
+  .players { display: flex; flex-direction: column; gap: 8px; }
+
+  .player-card {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .player-card.active {
+    border-color: var(--green);
+    background: var(--green-light);
+  }
+
+  .player-num {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+  }
+  .player-card.active .player-num {
+    background: var(--green);
+    color: white;
+  }
+
+  .player-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 40px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: #9FE1CB;
+    transition: width 0.6s ease;
+  }
+  .bar-fill.warning { background: #FAC775; }
+  .bar-fill.over { background: #F09595; }
+  .player-card.active .bar-fill { background: var(--green); }
+  .player-card.active .bar-fill.warning { background: var(--amber); }
+  .player-card.active .bar-fill.over { background: var(--red-mid); }
+
+  .time-display {
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    min-width: 52px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .player-card.active .time-display { color: var(--green-dark); }
+
+  .ctrl-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 0.5px solid var(--border-hover);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .ctrl-btn:hover { background: var(--bg-secondary); }
+  .ctrl-btn svg { pointer-events: none; display: block; }
+
+  .del-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .del-btn:hover { color: var(--red); }
+
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+    font-size: 15px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 0.5px dashed var(--border-hover);
+  }
+  .empty .icon { font-size: 36px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>⚽ Control de minutos</h1>
+    <button class="btn btn-danger" onclick="resetAll()">Reiniciar todo</button>
+  </div>
+
+  <div class="add-form">
+    <input type="text" id="nameInput" placeholder="Nombre del jugador..." maxlength="20" onkeydown="if(event.key==='Enter')addPlayer()"/>
+    <button class="btn-add" onclick="addPlayer()">+ Agregar</button>
+  </div>
+
+  <div class="summary">
+    <div class="stat">
+      <div class="stat-val" id="totalPlayers">0</div>
+      <div class="stat-label">Jugadores</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="activePlayers">0</div>
+      <div class="stat-label">En cancha</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="avgTime">0:00</div>
+      <div class="stat-label">Promedio</div>
+    </div>
+  </div>
+
+  <div class="global-controls" id="globalControls" style="display:none">
+    <button class="btn btn-stop-all" onclick="stopAll()">⏸ Pausar todos</button>
+    <button class="btn btn-start-all" onclick="startAll()">▶ Iniciar todos</button>
+  </div>
+
+  <div class="players" id="playersList">
+    <div class="empty"><div class="icon">👥</div>Agregá los jugadores para empezar</div>
+  </div>
+</div>
+
+<script>
+  let players = [];
+  let ticker = null;
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function fmt(s){ return Math.floor(s/60)+':'+pad(s%60); }
+
+  function addPlayer(){
+    const inp = document.getElementById('nameInput');
+    const name = inp.value.trim();
+    if(!name) return;
+    players.push({ id: Date.now(), name, seconds: 0, running: false });
+    inp.value = '';
+    render();
+    inp.focus();
+  }
+
+  function togglePlayer(id){
+    const p = players.find(x=>x.id===id);
+    if(!p) return;
+    p.running = !p.running;
+    ensureTicker();
+    render();
+  }
+
+  function removePlayer(id){
+    if(!confirm('¿Quitar a este jugador?')) return;
+    players = players.filter(x=>x.id!==id);
+    render();
+  }
+
+  function stopAll(){
+    players.forEach(p=>p.running=false);
+    render();
+  }
+
+  function startAll(){
+    players.forEach(p=>p.running=true);
+    ensureTicker();
+    render();
+  }
+
+  function resetAll(){
+    if(players.length && !confirm('¿Reiniciar todos los tiempos?')) return;
+    players.forEach(p=>{ p.seconds=0; p.running=false; });
+    render();
+  }
+
+  function ensureTicker(){
+    if(ticker) return;
+    ticker = setInterval(()=>{
+      let any = false;
+      players.forEach(p=>{ if(p.running){ p.seconds++; any=true; } });
+      if(any) renderTimes();
+    }, 1000);
+  }
+
+  function renderTimes(){
+    const maxTime = players.reduce((m,p)=>Math.max(m,p.seconds),0)||1;
+    const avg = players.length ? Math.round(players.reduce((s,p)=>s+p.seconds,0)/players.length) : 0;
+    document.getElementById('activePlayers').textContent = players.filter(p=>p.running).length;
+    document.getElementById('avgTime').textContent = fmt(avg);
+
+    players.forEach(p=>{
+      const td = document.getElementById('td-'+p.id);
+      const bar = document.getElementById('bar-'+p.id);
+      if(!td||!bar) return;
+      td.textContent = fmt(p.seconds);
+      const pct = Math.min(100, Math.round(p.seconds/maxTime*100));
+      bar.style.width = pct+'%';
+      bar.className = 'bar-fill'+(pct>90?' over':pct>70?' warning':'');
+    });
+  }
+
+  function render(){
+    const list = document.getElementById('playersList');
+    const gc = document.getElementById('globalControls');
+    document.getElementById('totalPlayers').textContent = players.length;
+    gc.style.display = players.length ? 'flex' : 'none';
+
+    if(!players.length){
+      list.innerHTML = '<div class="empty"><div class="icon">👥</div>Agregá los jugadores para empezar</div>';
+      return;
+    }
+
+    const maxTime = players.reduce((m,p)=>Math.max(m,p.seconds),0)||1;
+    const avg = players.length ? Math.round(players.reduce((s,p)=>s+p.seconds,0)/players.length) : 0;
+    document.getElementById('avgTime').textContent = fmt(avg);
+    document.getElementById('activePlayers').textContent = players.filter(p=>p.running).length;
+
+    const sorted = [...players].sort((a,b)=>a.seconds-b.seconds);
+
+    list.innerHTML = sorted.map((p,i)=>{
+      const pct = Math.min(100, Math.round(p.seconds/maxTime*100));
+      const barClass = 'bar-fill'+(pct>90?' over':pct>70?' warning':'');
+      return `<div class="player-card${p.running?' active':''}" id="card-${p.id}">
+        <div class="player-num">${i+1}</div>
+        <span class="player-name">${p.name}</span>
+        <div class="bar-wrap"><div class="${barClass}" id="bar-${p.id}" style="width:${pct}%"></div></div>
+        <span class="time-display" id="td-${p.id}">${fmt(p.seconds)}</span>
+        <button class="ctrl-btn" onclick="togglePlayer(${p.id})" title="${p.running?'Pausar':'Iniciar'}">
+          ${p.running
+            ? `<svg width="13" height="13" viewBox="0 0 13 13"><rect x="2" y="2" width="3.5" height="9" rx="1" fill="#BA7517"/><rect x="7.5" y="2" width="3.5" height="9" rx="1" fill="#BA7517"/></svg>`
+            : `<svg width="13" height="13" viewBox="0 0 13 13"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="#1D9E75"/></svg>`
+          }
+        </button>
+        <button class="del-btn" onclick="removePlayer(${p.id})" title="Quitar">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  render();
+</script>
+</body>
+</html>
